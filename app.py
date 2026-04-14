@@ -1,5 +1,12 @@
 from flask import Flask, request, jsonify
-from models import db, Volunteers as Volunteer, Profile
+from models import (
+    db,
+    Volunteers as Volunteer,
+    Profile,
+    Projects,
+    Tasks,
+    TaskAssignments,
+)
 from flask_migrate import Migrate
 
 app = Flask(__name__)
@@ -153,6 +160,36 @@ def delete_profile(profile_id):
         db.session.delete(profile)
         db.session.commit()
         return "", 204
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
+
+
+# /Tasks CRUD
+
+
+@app.route("/volunteers/<int:volunteer_id>/tasks/<int:task_id>", methods=["POST"])
+def assign_task(volunteer_id, task_id):
+    volunteer = db.session.get(Volunteer, volunteer_id)
+    task = db.session.get(Tasks, task_id)
+
+    if not volunteer or not task:
+        return jsonify({"message": "Volunteer or Task not found"}), 404
+
+    existing = TaskAssignments.query.filter_by(
+        volunteer_id=volunteer_id, task_id=task_id
+    ).first()
+    if existing:
+        return jsonify({"message": "Task already assigned to this volunteer"}), 409
+
+    try:
+        assignment = TaskAssignments(volunteer_id=volunteer_id, task_id=task_id)
+        db.session.add(assignment)
+        db.session.commit()
+        return (
+            jsonify({"message": f"Task '{task.title}' assigned to '{volunteer.name}'"}),
+            201,
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 500

@@ -28,11 +28,10 @@ class Volunteers(db.Model):
         uselist=False,
         cascade="all, delete-orphan",
     )
-
-    tasks = db.relationship(
-        "Tasks",
-        secondary="task_assignments",
-        back_populates="volunteers",
+    task_assignment = db.relationship(
+        "TaskAssignments",
+        back_populates="volunteer",
+        cascade="all, delete-orphan",
     )
 
     def to_dict(self) -> dict:
@@ -41,10 +40,9 @@ class Volunteers(db.Model):
             "name": self.name,
             "email": self.email,
             "profile": self.profile.to_dict() if self.profile else None,
-            "tasks": [task.to_dict() for task in self.tasks],
+            "tasks": [ta.task.to_dict() for ta in self.task_assignment],
         }
 
-    # Convert to json.dumps() format
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=4)
 
@@ -108,10 +106,11 @@ class Tasks(db.Model):
 
     project = db.relationship("Projects", backref=db.backref("tasks", lazy=True))
 
-    volunteers = db.relationship(
-        "Volunteers",
-        secondary="task_assignments",
-        back_populates="tasks",
+    # Many-to-many relationship
+    task_assignment = db.relationship(
+        "TaskAssignments",
+        back_populates="task",
+        cascade="all, delete-orphan",
     )
 
     def to_dict(self) -> dict:
@@ -129,10 +128,22 @@ class Tasks(db.Model):
         return f"<Task {self.title}, project ID: {self.project_id}, description: {self.description}>"
 
 
-task_assignments = db.Table(
-    "task_assignments",
-    db.Column(
-        "volunteer_id", db.Integer, db.ForeignKey("volunteers.id"), primary_key=True
-    ),
-    db.Column("task_id", db.Integer, db.ForeignKey("tasks.id"), primary_key=True),
-)
+class TaskAssignments(db.Model):
+    __tablename__ = "task_assignments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    volunteer_id = db.Column(db.Integer, db.ForeignKey("volunteers.id"), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=False)
+
+    volunteer = db.relationship("Volunteers", back_populates="task_assignment")
+    
+    task = db.relationship("Tasks", back_populates="task_assignment")
+
+# task_assignments = db.Table(
+#     "task_assignments",
+#     db.Column(
+#         "volunteer_id", db.Integer, db.ForeignKey("volunteers.id"), primary_key=True
+#     ),
+#     db.Column("task_id", db.Integer, db.ForeignKey("tasks.id"), primary_key=True),
+# )
+

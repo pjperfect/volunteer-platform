@@ -1,9 +1,9 @@
 from app import app
-from models import db, Volunteers, Profile, Projects, Tasks, task_assignments
+from models import db, Volunteers, Profile, Projects, Tasks, TaskAssignments
 
 with app.app_context():
     # Clear all data
-    db.session.execute(task_assignments.delete())
+    db.session.query(TaskAssignments).delete()
     db.session.query(Tasks).delete()
     db.session.query(Profile).delete()
     db.session.query(Volunteers).delete()
@@ -89,19 +89,31 @@ with app.app_context():
     db.session.commit()
 
     # Seed task assignments
-    v1.tasks.extend([t1, t2])
-    v2.tasks.extend([t2, t3])
-    v3.tasks.extend([t3, t7])
-    v4.tasks.extend([t1, t4])
-    v5.tasks.extend([t5, t6])
-    v6.tasks.extend([t4, t8])
-    v7.tasks.extend([t6, t5])
-    v8.tasks.extend([t7, t8])
-    v9.tasks.extend([t5, t3])
-    v10.tasks.extend([t2, t6])
+    assignments = [
+        TaskAssignments(volunteer_id=v1.id, task_id=t1.id),
+        TaskAssignments(volunteer_id=v1.id, task_id=t2.id),
+        TaskAssignments(volunteer_id=v2.id, task_id=t2.id),
+        TaskAssignments(volunteer_id=v2.id, task_id=t3.id),
+        TaskAssignments(volunteer_id=v3.id, task_id=t3.id),
+        TaskAssignments(volunteer_id=v3.id, task_id=t7.id),
+        TaskAssignments(volunteer_id=v4.id, task_id=t1.id),
+        TaskAssignments(volunteer_id=v4.id, task_id=t4.id),
+        TaskAssignments(volunteer_id=v5.id, task_id=t5.id),
+        TaskAssignments(volunteer_id=v5.id, task_id=t6.id),
+        TaskAssignments(volunteer_id=v6.id, task_id=t4.id),
+        TaskAssignments(volunteer_id=v6.id, task_id=t8.id),
+        TaskAssignments(volunteer_id=v7.id, task_id=t5.id),
+        TaskAssignments(volunteer_id=v7.id, task_id=t6.id),
+        TaskAssignments(volunteer_id=v8.id, task_id=t7.id),
+        TaskAssignments(volunteer_id=v8.id, task_id=t8.id),
+        TaskAssignments(volunteer_id=v9.id, task_id=t3.id),
+        TaskAssignments(volunteer_id=v9.id, task_id=t5.id),
+        TaskAssignments(volunteer_id=v10.id, task_id=t2.id),
+        TaskAssignments(volunteer_id=v10.id, task_id=t6.id),
+    ]
+    db.session.add_all(assignments)
     db.session.commit()
-    # We use the extend() method and not append() because tasks is a list-like relationship, and we want to add multiple tasks to each volunteer. The extend() method allows us to add multiple items to the list at once, while append() would only allow us to add one item at a time. By using extend(), we can efficiently assign multiple tasks to each volunteer in a single operation.
 
     print(
-        "Seeded 10 volunteers, 10 profiles, 4 projects, 8 tasks, and task assignments."
+        "Seeded 10 volunteers, 10 profiles, 4 projects, 8 tasks, 20 task assignments."
     )
